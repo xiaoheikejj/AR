@@ -1,0 +1,41 @@
+$icon-color: #999;
+
+.title-name {
+    font-size: 14px;
+    color: #666;
+}
+
+.svg-icon {
+    color: $icon-color;
+    font-size: 20px;
+    margin-right: 25px;
+    cursor: pointer;
+}
+
+.firstbread .el-breadcrumb__inner {
+    color: #529fe4 !important;
+    font-size: 14px;
+}
+
+.el-main {
+    overflow-x: hidden;
+}
+
+.del-icon {
+    font-size: 18px;
+}
+
+.name-style {
+    display: inline-block;
+    color: #666;
+    font-size: 14px; 
+    vertical-align: middle;
+}
+
+.spanimg-style {
+    display: inline-block;
+    width: 60px;
+    height: 60px;
+    overflow: hidden;
+    vertical-align: middle;
+}
