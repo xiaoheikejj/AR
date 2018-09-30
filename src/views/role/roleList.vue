@@ -7,7 +7,7 @@
                     <el-breadcrumb-item class="firstbread">角色管理</el-breadcrumb-item>
                 </el-breadcrumb>
             </el-header>
-            <el-main>
+            <el-main class="boxShadow">
                 <el-row type="flex" justify="space-between" class="screenRow">
                     <div>
                         <el-select placeholder="全部" 
@@ -33,14 +33,16 @@
                     style="width: 100%;margin-top: 20px;" 
                     stripe
                     v-loading="loading"
-                    element-loading-text="拼命加载中">
+                    element-loading-text="拼命加载中"
+                    element-loading-spinner="el-icon-loading">
                     <el-table-column 
                         type="index" 
                         :index="handleIndex"
                         label="序号" 
-                        align="center">            
+                        align="center"
+                        width="70px">            
                     </el-table-column>
-                    <el-table-column label="角色名" align="center">
+                    <el-table-column label="角色名">
                         <template slot-scope="scope">
                             <div class="title-name">{{scope.row.roleName}}</div>
                         </template>
@@ -52,7 +54,7 @@
 
                     </el-table-column>
                     <el-table-column label="开启状态" align="center">
-                        <template slot-scope="scope">
+                        <template slot-scope="scope" v-if="scope.row.roleID > 1">
                             <el-switch 
                                 v-model="scope.row.status"
                                 @change="slideSwitch(scope.row.roleID, scope.row.status)"
@@ -61,20 +63,18 @@
                         </template>
                     </el-table-column>
                     <el-table-column label="操作" align="center">
-                        <template slot-scope="scope">
+                        <template slot-scope="scope" v-if="scope.row.roleID > 1">
                             <el-tooltip class="item" effect="light" content="修改" placement="top-start" 
                                 @click.native="changeRole(scope.row.roleID)">
-                                <icon-svg icon-class="bianji" v-if="scope.row.roleID > 1"></icon-svg>
+                                <icon-svg icon-class="bianji"></icon-svg>
                             </el-tooltip>
                             <el-tooltip class="item" effect="light" content="删除" placement="top-start" 
                                 @click.native="confirmDelete(scope.row.roleID)">
-                                <icon-svg icon-class="shanchu" style="font-size: 18px;" v-if="scope.row.roleID > 1"></icon-svg>
+                                <icon-svg icon-class="shanchu" class="del-icon"></icon-svg>
                             </el-tooltip>
                         </template>
                     </el-table-column>
                 </el-table>
-            </el-main>
-            <el-footer>
                 <el-pagination 
                     @size-change="handleSizeChange"
                     @current-change="handleCurrentChange" 
@@ -83,8 +83,11 @@
                     layout="total, sizes, prev, pager, next, jumper" 
                     :total="tableTotal" 
                     background 
-                    style="text-align: center;">
+                    style="text-align: center;margin-top:20px;">
                 </el-pagination>
+            </el-main>
+            <el-footer>
+                
             </el-footer>
         </el-container>
     </div>
@@ -127,7 +130,7 @@ export default {
 
             modifyDisabled: true,
             addDisabled: true,
-            loading: false,
+            loading: true,
             switchOpen: 1,
             switchClose: 0
         }
@@ -136,6 +139,10 @@ export default {
         IconSvg
     },
     created() {
+        //如果没有登录跳转到登录页
+        if (!this.userID) {
+            this.$router.push("/");
+        }
         this.getTableData(1);
     },
     methods: {
@@ -144,6 +151,7 @@ export default {
          * @param [page] 当前第几页
          */
         getTableData(page) {
+            this.loading = true;
             const params = {
                 companyID: this.companyID,
                 userID: this.userID,
@@ -154,13 +162,15 @@ export default {
             };
             roleList(params)
             .then(res => {
+                //消除等待特效
+                this.loading = false;
                 if (res.code === 1) {
                     this.tableData = res.data.list;
                     this.tableTotal = res.data.totalSize;
-                    this.loading = false;
                 } else {
                     //表格为空，分页不显示
                     this.tableData = [];
+                    this.tableTotal = 0;
                 }          
             })
             .catch(err => {
@@ -261,6 +271,10 @@ export default {
          */
         handleIndex(res) {
             let value = this.handleCurrent - 1 + String(res + 1);
+            //分为10,20,30
+            if (res == 9) {
+                value = this.handleCurrent + "0";
+            }
             let arr = value.split("");
             if (arr[0] == 0) {
                 arr.shift();

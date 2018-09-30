@@ -7,7 +7,7 @@
                     <el-breadcrumb-item class="firstbread">AR展示内容</el-breadcrumb-item>
                 </el-breadcrumb>
             </el-header>
-            <el-main>
+            <el-main class="boxShadow">
                 <el-row type="flex" justify="space-between" class="screenRow">
                     <div>
                         <el-select placeholder="全部" 
@@ -42,28 +42,32 @@
                 <!-- 表格 -->
                 <el-table 
                     :data="tableData"
+                    v-loading="loading"
                     element-loading-text="拼命加载中"
+                    element-loading-spinner="el-icon-loading"
                     style="width: 100%;margin-top: 20px;" 
                     stripe>
                     <el-table-column 
                         type="index" 
                         :index="handleIndex"
                         label="序号" 
-                        align="center">            
+                        align="center"
+                        width="70px">            
                     </el-table-column>
                     <el-table-column label="展示内容">
                         <template slot-scope="scope">
                             <div style="display: flex;display: -webkit-flex;">
                                 <span class="spanimg-style" @click="cellClick(scope.row)">
-                                <img v-if="scope.row.contentType==1 || scope.row.contentType==2" 
-                                    :src="scope.row.smallTargetUrl" 
-                                    style="width: 100%;">
-                                <!-- <video v-if="scope.row.contentType == 2" 
-                                    :src="scope.row.targetUrl"
-                                    style="width: 100%;"
-                                    preload="metadata"></video> -->
-                                <a v-if="scope.row.contentType==3" 
-                                    :href="scope.row.targetUrl"></a>
+                                    <img v-if="scope.row.contentType==1 || scope.row.contentType==2" 
+                                        :src="scope.row.smallTargetUrl" 
+                                        style="width: 100%;">
+                                    <!-- <video v-if="scope.row.contentType == 2" 
+                                        :src="scope.row.targetUrl"
+                                        style="width: 100%;"
+                                        preload="metadata"></video> -->
+                                    <a v-if="scope.row.contentType==3" 
+                                        :href="scope.row.smallTargetUrl"
+                                        target="_blank">{{ scope.row.smallTargetUrl }}</a>
                                 </span>
                                 <div style="margin-left: 10px;">
                                     <div class="name-style" style="margin-top: 10px;">{{ scope.row.contentName }}</div>
@@ -74,10 +78,7 @@
                             </div>
                         </template>
                     </el-table-column>
-                    <el-table-column label="已关联图片数" align="center">
-                        <template slot-scope="scope">
-                            <s-xcountup :end="scope.row.relationCount" :duration="4"></s-xcountup>
-                        </template>
+                    <el-table-column prop="relationCount" label="已关联图片数" align="center">
                     </el-table-column>
                     <el-table-column label="开启状态" align="center">
                         <template slot-scope="scope">
@@ -100,8 +101,6 @@
                         </template>
                     </el-table-column>
                 </el-table>
-            </el-main>
-            <el-footer>
                 <el-pagination
                     @size-change="handleSizeChange"
                     @current-change="handleCurrentChange"
@@ -109,15 +108,19 @@
                     layout="total, sizes, prev, pager, next, jumper"
                     :total="tableTotal"
                     background
-                    style="text-align: center">
+                    style="text-align: center;margin-top: 20px;">
                 </el-pagination>
+            </el-main>
+            <el-footer>
+                
             </el-footer>
             <!-- 大图 -->
             <el-dialog
                 :visible.sync="detailvisible"
                 width="500px">
-                <img v-if="dialogContentType==1" :src="detailImgUrl" style="width: 100%;">
-                <video ref="bigVideo" v-if="dialogContentType==2" autoplay :src="detailVideoUrl" style="width: 100%;"></video>
+                <img v-show="dialogContentType==1" :src="detailImgUrl" style="width: 100%;">
+                <video ref="bigVideo" v-show="dialogContentType==2" autoplay controls :src="detailVideoUrl" style="width: 100%;">
+                </video>
             </el-dialog>
         </el-container>
     </div>
@@ -160,7 +163,8 @@ export default {
             dialogContentType: 0,
             detailvisible: false,
             detailImgUrl: "",
-            detailVideoUrl: ""
+            detailVideoUrl: "",
+            loading: true
         }
     },
     components: {
@@ -168,16 +172,25 @@ export default {
         IconSvg
     },
     created() {
+        //如果没有登录跳转到登录页
+        if (!this.productID) {
+            this.$router.push("/");
+        }
         this.getTableData(1);
         this.getdick();
     },
     watch: {
         detailvisible() {
-            if (!this.detailvisible) {
-                this.$refs.bigVideo.pause();
-            } else {
-                this.$refs.bigVideo.play();
-            }
+            //当video节点渲染进来的时候才开启mp4播放
+            this.$nextTick(() => {
+                if (this.dialogContentType == 2) {
+                    if (this.detailvisible) {
+                        this.$refs.bigVideo.play();
+                    } else {
+                        this.$refs.bigVideo.pause();
+                    }
+                }
+            })
         }
     },
     methods: {
@@ -212,6 +225,7 @@ export default {
          * @param [page] 当前第几页
          */
         getTableData(page) {
+            this.loading = true;
             const data = {
                 pageNo: page,
                 pageSize: this.handleSize,
@@ -224,13 +238,15 @@ export default {
             }
             contentList(data)
             .then(res => {
+                //停止等待
+                this.loading = false;
                 if (res.code === 1) {
                     this.tableData = res.data.list;
                     this.tableTotal = res.data.totalSize;
-                } else if (res.code === 0) {
+                } else {
                     //表格为空，分页不显示
                     this.tableData = [];
-                    this.paginationShow = false;
+                    this.tableTotal = 0;
                 }
             })
             .catch(err => {
@@ -313,7 +329,12 @@ export default {
          * @param [res] 返回的序号
          */
         handleIndex(res) {
+            //分为1-9
             let value = this.handleCurrent - 1 + String(res + 1);
+            //分为10,20,30
+            if (res == 9) {
+                value = this.handleCurrent + "0";
+            }
             let arr = value.split("");
             if (arr[0] == 0) {
                 arr.shift();
@@ -322,6 +343,10 @@ export default {
         },
         /**点击大图 */
         cellClick(row) {
+            // 如果是外链的话下面这些就不执行了
+            if (row.contentType == 3) {
+                return false;
+            }
             this.dialogContentType = row.contentType;
             this.detailImgUrl = row.targetUrl;
             this.detailVideoUrl = row.targetUrl;

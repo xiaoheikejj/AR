@@ -8,6 +8,14 @@ export function themeList(data) {
     })
 }
 
+export function lbsthemeList(data) {
+    return request({
+        url: '/lbs/themeList',
+        method: 'post',
+        data: data
+    })
+}
+
 export function newTheme(data) {
     return request({
         url: '/ar/addTheme',

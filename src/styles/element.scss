@@ -1,5 +1,5 @@
 .el-table th>.cell {
-    font-size: 14px;
+    font-size: 16px;
     color: #222;
     font-weight: 400;
 }
@@ -9,4 +9,25 @@
 
 .disabled .el-upload--picture-card {
     display: none;
+}
+
+.el-submenu .el-menu-item {
+    color: #909399;
+    line-height: 38px;
+    height: 38px;
+}
+.el-menu-item-group__title {
+    padding: 0;
+}
+.el-table {
+    color: #999;
+}
+
+.el-menu-item, .el-submenu__title {
+    height: 50px;
+    line-height: 50px;
+}
+
+.el-dialog__title {
+    font-size: 16px;
 }

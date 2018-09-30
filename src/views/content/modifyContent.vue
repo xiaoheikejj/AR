@@ -13,8 +13,8 @@
             <el-form-item label="名称" prop="contentName">
                 <el-input v-model="ruleForm.contentName"></el-input>
             </el-form-item>
-            <el-form-item label="展示内容" @change="selectChange">
-                <el-select v-model="ruleForm.contentType">
+            <el-form-item label="展示内容">
+                <el-select v-model="ruleForm.contentType" @change="selectChange">
                     <el-option
                         v-for="(item, index) in options"
                         :key="String(index)"
@@ -22,7 +22,7 @@
                         :label="item.label"></el-option>
                 </el-select>
             </el-form-item>
-            <el-form-item label="素材">
+            <el-form-item label="素材" class="material">
                 <el-upload
                     drag
                     :list-type="listType"
@@ -47,7 +47,7 @@
                     :inactive-value="ruleForm.switchclose"></el-switch>
             </el-form-item>
             <el-form-item>
-                <el-button type="primary" @click="submit('ruleForm');">保存</el-button>
+                <el-button type="primary" @click="submit('ruleForm');" :disabled="buttonDisabled">保存</el-button>
                 <el-button @click="$router.push('/contentList')">取消</el-button>
                 <el-button type="danger" @click="reset('ruleForm')">重置</el-button>
             </el-form-item>
@@ -88,6 +88,7 @@ export default {
                 },
                 contentSize: 0
             },
+            buttonDisabled: false,
             options: [
                 {
                     value: 1,
@@ -104,12 +105,6 @@ export default {
                 contentName: [
                     {required: true,message: "请输入展示内容名称",trigger: 'blur'}
                 ],
-                // contentType: [
-                //     {required: true,message: "还没有选择展示内容"}
-                // ],
-                // linkUrl: [
-                //     {required: true,message: "请输入地址",trigger: 'blur'}
-                // ],
                 status: [
                     {required: true}
                 ]
@@ -138,6 +133,12 @@ export default {
             const isLt20M = file.size / 1024 / 1024 < 20;
             const isIMG = file.type.split("/")[0] === 'image';
             const isMP4 = file.type === 'video/mp4';
+            //如果视频type为2，图片为1
+            if (isIMG) {
+                this.ruleForm.uploadImg.type = 1;
+            } else {
+                this.ruleForm.uploadImg.type = 2;
+            }
             if (this.ruleForm.contentType == 1) {
                 if (!isIMG) {
                     this.$message.warning("请上传jpg/png格式的图片");
@@ -145,13 +146,18 @@ export default {
                 }
             } else if (this.ruleForm.contentType == 2) {
                 if (!isMP4) {
-                    this.$message.warning("请上传mp4格式的图片");
+                    this.$message.warning("请上传mp4格式的视频");
                     return false;
                 }
             }
             if (!isLt20M) {
                 this.$message.error('上传头像图片大小不能超过 20MB!');
                 return false;
+            }
+            //选择上传外链的时候
+            if (this.ruleForm.contentType == 3) {
+                this.$message.warning('当前只能选择上传外链!');
+                return false;                
             }
             this.listType = "picture-card";
             this.uploadDisabled = true;
@@ -162,7 +168,13 @@ export default {
                 this.ruleForm.contentSize = res.data.fileSize;
                 this.ruleForm.contentUrl = res.data.fileUrl;
                 this.ruleForm.smallFileUrl = res.data.smallFileUrl;
-                this.$message.success(res.msg);
+                this.$message.success("上传成功");
+                //上传成功后点击保存按钮可以点击
+                this.buttonDisabled = false;
+                //上传成功后给予图片预览；后来一直显示不出我也不知道怎么回事
+                this.$nextTick(() => {
+                    $(".el-upload-list__item-thumbnail").attr("src", res.data.fileUrl);
+                })
             }
             if (this.ruleForm.contentType === 2) {
                 this.$nextTick(() => {
@@ -173,10 +185,12 @@ export default {
         },
         /**移除识别图之前 */
         removeUpload() {
-             setTimeout(() => {
+            setTimeout(() => {
                 this.listType = "";
                 this.uploadDisabled = false;
             }, 500);
+            //移除图片的时候保存按钮不可点击
+            this.buttonDisabled = true;
         },
         /**得到展示内容 */
         findContent() {
@@ -189,15 +203,16 @@ export default {
             getContent(params)
             .then(res => {
                 if (res.code === 1) {
-                    this.listType = "picture-card";
-                    this.uploadDisabled = true;
-                    this.fileList = [];
-                    if (res.data.contentType === 2) {
-                        this.$nextTick(() => {
-                            $(".el-upload-list__item").find("img").remove();
-                            $(".el-upload-list__item").prepend("<video src=" + this.ruleForm.contentUrl + " " + "style='width: 100%;height: 100%;' autoplay></video>")
-                        })
-                    } 
+                    if (res.data.contentType != 3) {
+                        this.listType = "picture-card";
+                        this.uploadDisabled = true;
+                        if (res.data.contentType === 2) {
+                            this.$nextTick(() => {
+                                $(".el-upload-list__item").find("img").remove();
+                                $(".el-upload-list__item").prepend("<video src=" + this.ruleForm.contentUrl + " " + "style='width: 100%;height: 100%;' autoplay></video>")
+                            })
+                        }
+                    }
                     this.ruleForm.contentName = res.data.contentName;
                     this.ruleForm.linkUrl = res.data.linkUrl;
                     this.ruleForm.status = res.data.status;
@@ -206,13 +221,23 @@ export default {
                             this.ruleForm.contentType = item.label;
                         }
                     });
-                    this.fileList.push({
-                        name: "1",
-                        url: res.data.targetUrl
-                    });
+                    if (res.data.contentType != 3) {
+                        this.fileList.push({
+                            name: "1",
+                            url: res.data.targetUrl
+                        });
+                    }
                     this.ruleForm.contentUrl = res.data.targetUrl;
                     this.ruleForm.contentSize = res.data.contentSize;
                     this.ruleForm.contentType = res.data.contentType;
+                    //如果进来是外链的话保存按钮去除
+                    if (res.data.contentType == 3) {
+                        this.buttonDisabled = false;
+                        //如果是外链的话隐藏素材
+                        this.ruleForm.smallContentUrl = res.data.linkUrl;
+                        this.ruleForm.contentUrl = res.data.linkUrl;
+                        $(".material").fadeOut();
+                    }
                 }
             })
             .catch(err => {
@@ -237,6 +262,12 @@ export default {
                 status: this.ruleForm.status,
                 contentSize: this.ruleForm.contentSize,
             };
+            //如果外链不为空，展示内容就是外链
+            if (this.ruleForm.contentType && this.ruleForm.linkUrl) {
+                params.contentType = 3;
+                params.smallContentUrl = this.ruleForm.linkUrl;
+                params.contentUrl = this.ruleForm.linkUrl;
+            }
             this.$refs[formName].validate(valid => {
                 if (valid) {
                     editContent(params)
@@ -263,7 +294,14 @@ export default {
         },
         /**改变select */
         selectChange(res) {
+            this.ruleForm.contentType = res;
             this.ruleForm.uploadImg.type = res;
+            //如果选中的是外链，把素材库隐藏掉
+            if (res == 3) {
+                $(".material").fadeOut();
+            } else {
+                $(".material").fadeIn();
+            }
         }
     }
 }

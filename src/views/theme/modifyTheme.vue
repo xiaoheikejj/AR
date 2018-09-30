@@ -45,7 +45,8 @@
                     type="datetime"
                     value-format="yyyy-MM-dd HH:mm:ss"
                     placeholder="结束时间"
-                    style="width: 36%;">
+                    style="width: 36%;"
+                    @change="endtimeChange">
                 </el-date-picker>
                 <el-button @click="longTime">长期有效</el-button>
             </el-form-item>
@@ -71,6 +72,7 @@
 </template>
 <script>
 import { getTheme, editTheme } from '@/api/theme'
+import { getCorrectTime } from '@/utils/timeStamp'
 export default {
     name: 'modifyTheme',
     data() {
@@ -127,6 +129,10 @@ export default {
                 this.$message.success(res.msg);
                 this.ruleForm.fileUrl = res.data.fileUrl;
                 this.ruleForm.smallFileUrl = res.data.smallFileUrl;
+                //上传成功后给予图片预览；后来一直显示不出我也不知道怎么回事
+                this.$nextTick(() => {
+                    $(".el-upload-list__item-thumbnail").attr("src", res.data.fileUrl);
+                })
             }
         },
         /**图片上传之前 */
@@ -216,6 +222,20 @@ export default {
         longTime() {
             this.ruleForm.themeBegintime = getCorrectTime(new Date().getTime());
             this.ruleForm.themeEndtime = getCorrectTime(3153600000000 + new Date().getTime());
+        },
+        /**
+         * 改变结束时间时触发
+         * @param [value] 返回的结束时间
+         */
+        endtimeChange(value) {
+            if (value) {
+                //设置开始时间和结束时间的时间戳
+                let begin = new Date(this.ruleForm.themeBegintime).getTime(),
+                    end = new Date(value).getTime();
+                if (begin > end) {
+                    this.$message.warning("请设置合理的时间，结束时间应大于开始时间");
+                }
+            }
         }
     }
 }

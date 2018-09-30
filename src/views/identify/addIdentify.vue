@@ -51,7 +51,7 @@
                     :show-file-list="false"
                     @click.native="contentdialog=true">
                     <img v-if="ruleForm.contentUrl" :src="ruleForm.contentUrl" class="avatar">
-                    <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                    <i v-else class="el-icon-plus avatar-uploader-icon i-line-height"></i>
                 </el-upload>
             </el-form-item>
             <el-form-item label="启用状态" prop="status">
@@ -98,6 +98,7 @@
                         <!-- 图片 -->
                         <img v-if="scope.row.contentType == 1 || scope.row.contentType == 2" 
                             :src="scope.row.smallTargetUrl" style="width: 50px;">
+                        <span>{{ scope.row.contentName }}</span>
                         <!-- 视频 -->
                         <!-- <video v-if="scope.row.contentType == 2" 
                             :src="scope.row.smallTargetUrl" style="width: 50px;"></video> -->
@@ -106,7 +107,7 @@
                             :href="scope.row.smallTargetUrl" target="_blank"></a>
                     </template>
                 </el-table-column>
-                <el-table-column prop="relationCount" label="以关联识别图数">
+                <el-table-column prop="relationCount" label="已关联识别图数">
 
                 </el-table-column>
             </el-table>
@@ -192,6 +193,7 @@ export default {
             this.getTableData(this.handleCurrent);
         },
         handleCurrentChange(val) {
+            this.handleCurrent = val;
             this.getTableData(this.handleCurrent);
         },
         /**
@@ -226,12 +228,26 @@ export default {
                     }
                 })
             }
+            //上传成功后给予图片预览；后来一直显示不出我也不知道怎么回事
+            this.$nextTick(() => {
+                $(".el-upload-list__item-thumbnail").attr("src", res.data.fileUrl);
+            })
         },
         /**
          * 图片上传之前图片格式
          * @param [file] 参数为上传的文件
          */
         beforeUpload(file) {
+            const isLt2M = file.size / 1024 / 1024 < 2;
+            const isIMG = file.type.split("/")[0] === 'image';
+            if (!isIMG) {
+                this.$message.warning("请上传jpg/png格式的图片");
+                return false;
+            }
+            if (!isLt2M) {
+                this.$message.error('上传图片大小不能超过 2MB!');
+                return false;
+            }
             let fileBase = new FileReader();
             fileBase.readAsDataURL(file);
             fileBase.onload = function(e){
@@ -239,15 +255,6 @@ export default {
             }.bind(this);
             this.listType = "picture-card";
             this.uploadDisabled = true;
-            const isLt2M = file.size / 1024 / 1024 < 2;
-            const isIMG = file.type.split("/")[0] === 'image';
-            if (!isIMG) {
-                this.$message.warning("请上传jpg/png格式的图片");
-            }
-            if (!isLt2M) {
-                this.$message.error('上传图片大小不能超过 2MB!');
-            }
-            return isLt2M && isIMG;
         },
         /**移除识别图之前 */
         removeUpload() {
@@ -268,7 +275,7 @@ export default {
                 companyID: this.companyID,
                 productID: this.productID,
                 userID: this.userID,
-                name: screen.contentName
+                name: this.screen.contentName
             };
             contentList(params)
             .then(res => {

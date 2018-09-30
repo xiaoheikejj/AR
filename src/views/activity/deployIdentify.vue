@@ -4,6 +4,7 @@
         <p class="title">
             九宫格配置
             <span>图片位置见左图</span>
+            <img src="../../assets/img/position.png" alt="" width="60px">
         </p>
         <el-table
             :data="tableData"
@@ -24,7 +25,9 @@
             </el-table-column>
             <el-table-column label="识别图">
                 <template slot-scope="scope">
-                    <img :src="scope.row.activityScanImgUrl" style="width: 60px;max-height: 60px;">
+                    <div @click="cellClickImg(scope.row.activityScanImgUrl)">
+                        <img :src="scope.row.activityScanImgUrl" style="width: 60px;max-height: 60px;">
+                    </div>
                 </template>
             </el-table-column>
             <el-table-column label="可识别级别">
@@ -41,7 +44,8 @@
             <el-table-column label="操作">
                 <template slot-scope="scope">
                     <el-tooltip class="item" effect="light" content="修改" placement="top-start"
-                        @click.native="configVisible = true;
+                        @click.native="configVisible=true;
+                        buttonDisabled=false;
                         dialogName = (scope.row.activityImgNo + '号图');
                         transitionValue(scope.row.activityInfoID)"
                         v-if="scope.row.activityInfoID > 0">
@@ -105,10 +109,16 @@
                     </el-input>
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="primary" @click="submit('ruleForm')">保存九宫格</el-button>
+                    <el-button type="primary" @click="submit('ruleForm')" :disabled="buttonDisabled">保存九宫格</el-button>
                     <el-button type="info" @click="configVisible=false">取消</el-button>
                 </el-form-item>
             </el-form>
+        </el-dialog>
+        <el-dialog
+            :visible.sync="bigImgVisible"
+            title="识别图大图"
+            width="500px">
+            <img :src="bigImg" width="100%">
         </el-dialog>
     </div>
 </template>
@@ -120,6 +130,21 @@ import { getIdenfityGrade, identifySimilar } from '@/api/identify'
 export default {
     name: "activityIdentifyList",
     data() {
+        var isInteger = (rule, value, callback) => {
+            var val = value%1;
+            if (val == 0) {
+                callback();
+            } else {
+                callback(new Error("概率必须为整数"));
+            }
+        }
+        var range = (rule, value, callback) => {
+            if (value >= 0 && value <= 100) {
+                callback();
+            } else {
+                callback(new Error("概率必须0-100之间"));
+            }
+        }
         return {
             companyID: sessionStorage.getItem("companyID"),
             userID: sessionStorage.getItem("userID"),
@@ -154,12 +179,17 @@ export default {
             rules: {
                 activityPrizeRatio: [
                     {required: true, message: "中奖概率不能为空"},
-                    {type: 'number', message: '概率需为数字'}
+                    {type: 'number', message: '概率需为数字'},
+                    {validator: isInteger},
+                    {validator: range},
                 ]
             },
             tableData: [],
             texts: ["差", "差", "良", "良", "优", "优"],
-            configVisible: false
+            configVisible: false,
+            bigImgVisible: false,
+            bigImg: "",
+            buttonDisabled: false
         }
     },
     components: {
@@ -172,19 +202,10 @@ export default {
     methods: {
         /**图片上传之前 */
         contentbefore(file) {
-            const isJPG = file.type === 'image/jpeg';
-            const isPNG = file.type === 'image/png';
-            if (!isJPG) {
-                if (!isPNG) {
-                    this.$message.error("只能上传jpg、png图片");
-                    return false;
-                }
-            } 
-            if (!isPNG) {
-                if (!isJPG) {
-                    this.$message.warnin("只能上传jpg、png图片");
-                    return false;
-                }
+            const isIMG = file.type.split("/")[0] === 'image';
+            if (!isIMG) {
+                this.$message.error("只能上传jpg、png图片");
+                return false;
             } 
             this.listType = "picture-card";
             this.uploadDIS = true;
@@ -222,7 +243,9 @@ export default {
         identifysuccess(res) {
             if (res.code === 1) {
                 this.$message.success(res.msg);
-                this.ruleForm.identifyUrl = res.data.fileUrl
+                this.ruleForm.identifyUrl = res.data.fileUrl;
+                //可以让他上传
+                this.buttonDisabled = false;
             }
             const params = {
                 companyID: this.companyID,
@@ -242,6 +265,8 @@ export default {
         identifyremove() {
             this.ruleForm.grade = 0;
             this.uploadDISPLAY = false;
+            //不能上传
+            this.buttonDisabled = true;
         },
         /**获取列表 */
         getTableData() {
@@ -255,6 +280,10 @@ export default {
             activityIdentifyList(params)
             .then(res => {
                 if (res.code === 1) {
+                    // 统一处理概率
+                    res.data.forEach(item => {
+                        item.activityPrizeRatio = item.activityPrizeRatio + "%";
+                    })
                     this.tableData = res.data;
                     this.tableData.unshift({
                         activityInfoName: "背景图",
@@ -330,10 +359,15 @@ export default {
                             userID: this.userID,
                             base64Encoding: this.ruleForm.imageBase64
                         };
-                        resolve(identifySimilar(data));
+                        //如果base64不为空的时候验证base64
+                        if (data.base64Encoding != "") {
+                            resolve(identifySimilar(data));
+                        } else {
+                            resolve(1)
+                        }
                     })
                     .then(value => {
-                        if (value.code === 1) {
+                        if (value.code === 1 || value == 1) {
                             return Promise.resolve(editActivityIdentify(params));
                         } else {
                             this.$message.error("识别图重复，请更换识别图");
@@ -351,7 +385,14 @@ export default {
                     })
                 }
             })
-        }
+        },
+        /**点击识别图展示大图 */
+        cellClickImg(res) {
+            if (res != "") {
+                this.bigImg = res;
+                this.bigImgVisible = true;
+            }
+        },
     }
 }
 </script>

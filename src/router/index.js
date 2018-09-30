@@ -38,11 +38,30 @@ import Activity from '@/views/activity/index'   //index
 import BaseConfig from '@/views/activity/baseConfig'    //基础配置
 import DeployIdentify from '@/views/activity/deployIdentify'   //九宫格配置
 import ChangeBaseConfig from '@/views/activity/changeBaseConfig'    //修改基本配置
+import ChoiceTemplate from '@/views/activity/choiceTemplate' //选择模板
 
 // 统计
 import NormalCount from '@/views/count/normalcount'    //普通
 import FuCount from '@/views/count/fucount/'    //扫福
 import Resouces from '@/views/count/resouces'
+
+
+// LBS
+import LbsList from '@/views/lbs/index'
+import AddLbs from '@/views/lbs/addLBS'
+import ModifyLbs from '@/views/lbs/modifyLBS'
+
+import LbsArList from '@/views/lbsar/index'
+import AddArLbs from '@/views/lbsar/addLBSAr'
+import ModifyArLbs from '@/views/lbsar/modifyLBSAr'
+
+import LbsidentifyList from '@/views/lbs/identify/index'
+import LbsaddIdentify from '@/views/lbs/identify/addIdentify'
+import LbschangeIdentify from '@/views/lbs/identify/changeIdentify'
+
+import LbsAridentifyList from '@/views/lbsar/identify/index'
+import LbsAraddIdentify from '@/views/lbsar/identify/addIdentify'
+import LbsArchangeIdentify from '@/views/lbsar/identify/changeIdentify'
 
 
 Vue.use(Router)
@@ -71,13 +90,27 @@ const routes = [
         {path: '/modifyStaff', component: ModifyStaff},  
         //活动
         {path: '/activity', name: 'activity', component: Activity},
+        {path: '/choiceTemplate', name: 'choiceTemplate', component: ChoiceTemplate},
         {path: '/baseConfig', name: 'baseConfig', component: BaseConfig},
         {path: '/deployIdentify', name: 'deployIdentify', component: DeployIdentify},
         {path: '/changeBaseConfig', name: 'changeBaseConfig', component: ChangeBaseConfig},
         //统计
         {path: '/normalCount', name: 'normalCount', component: NormalCount},
         {path: '/fuCount', name: 'fuCount', component: FuCount},
-        {path: '/resouces', name: 'resouces', component: Resouces}
+        {path: '/resouces', name: 'resouces', component: Resouces},
+        // LBS
+        {path: '/lbsList', name: 'lbsList', component: LbsList},
+        {path: '/addLbs', name: 'addLbs', component: AddLbs},
+        {path: '/modifyLbs', name: 'modifyLbs', component: ModifyLbs},
+        {path: '/lbsArList', name: 'lbsArList', component: LbsArList},
+        {path: '/addArLbs', name: 'addArLbs', component: AddArLbs},
+        {path: '/modifyArLbs', name: 'modifyArLbs', component: ModifyArLbs},
+        {path: '/lbsidentifyList', name: 'lbsidentifyList', component: LbsidentifyList},
+        {path: '/lbsaddIdentify', name: 'lbsaddIdentify', component: LbsaddIdentify},
+        {path: '/lbschangeIdentify', name: 'lbschangeIdentify', component: LbschangeIdentify},
+        {path: '/lbsAridentifyList', name: 'lbsAridentifyList', component: LbsAridentifyList},
+        {path: '/lbsAraddIdentify', name: 'lbsAraddIdentify', component: LbsAraddIdentify},
+        {path: '/lbsArchangeIdentify', name: 'lbsArchangeIdentify', component: LbsArchangeIdentify},
     ]}
 ]
 const router = new Router({
@@ -85,11 +118,11 @@ const router = new Router({
 })
 //路由重定向
 router.beforeEach((to, from, next) => {
-    if (sessionStorage.getItem("overtime")) {
-        if (to.path !== "/login" && sessionStorage.getItem("overtime") == -100) {
-            return next("/login");
-        }
-    }
+    // if (sessionStorage.getItem("overtime")) {
+    //     if (to.path !== "/login" && sessionStorage.getItem("overtime") == -100) {
+    //         return next("/login");
+    //     }
+    // }
     //获取code
     const code = sessionStorage.getItem("code");
     if (to.path !== "/login" && code == -100) {

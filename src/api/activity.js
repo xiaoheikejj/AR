@@ -88,3 +88,11 @@ export function editActivity(data) {
         data: data
     })
 }
+
+export function getActivityPage(data) {
+    return request({
+        url: '/activity/getActivityPage',
+        method: 'post',
+        data: data
+    })
+}

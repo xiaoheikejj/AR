@@ -1,6 +1,6 @@
 <template>
     <el-container id="home">
-        <el-aside width="245px" style="padding-right: 1px;">
+        <el-aside width="240px">
             <Sidebar :sides="sideLists"></Sidebar>
         </el-aside>
         <el-container direction="vertical">
@@ -34,6 +34,9 @@ export default {
 <style lang="scss">
 #home {
     height: 100%;
+    .el-aside {
+        box-shadow: 0 0 10px 5px rgba(235,235,235,0.2);
+    }
 }
 .el-submenu .el-menu-item {
     min-width: 240px;

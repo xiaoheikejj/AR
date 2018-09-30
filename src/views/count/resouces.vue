@@ -1,6 +1,9 @@
 <template>
     <div id="resouces">
-        <div style="margin-top: 50px;display: flex;display: -webkit-flex;justify-content: space-around;padding: 0 10%;">
+        <div class="flex-style">
+            <el-progress v-for="(item, index) in handleResouce" type="circle" :percentage="item.value" :key="String(index)" :color="item.color" :stroke-width="strokeWidth"></el-progress>
+        </div>
+        <div class="flex-style">
             <div v-for="(item, index) in resouces" :key="'success' + String(index)" :class="'intro'+ (index + 1)">
                 <div style="text-align: center;font-size: 16px;" class="title">{{ item.name }}</div>
                 <div style="margin-top: 10px;padding-left:55px;">
@@ -17,15 +20,13 @@
                 </div>
             </div>
         </div>
-        <div style="margin-top: 20px;display: flex;display: -webkit-flex;justify-content: space-around;padding: 0 10%;">
-            <el-progress v-for="(item, index) in handleResouce" type="circle" :percentage="item.value" :key="String(index)" :color="item.color" :stroke-width="strokeWidth"></el-progress>
-        </div>
-        <div style="margin: 20px 60px 0;">
-        <el-radio-group v-model="radio" @change="radioChange">
-            <el-radio-button label="存储空间"></el-radio-button>
-            <el-radio-button label="扫描次数"></el-radio-button>
-            <el-radio-button label="流量使用"></el-radio-button>
-        </el-radio-group>
+        
+        <div style="margin: 50px 60px 0;">
+            <el-radio-group v-model="radio" @change="radioChange">
+                <el-radio-button label="存储空间"></el-radio-button>
+                <el-radio-button label="扫描次数"></el-radio-button>
+                <el-radio-button label="流量使用"></el-radio-button>
+            </el-radio-group>
         </div>
         <ve-histogram 
             :data="chartData"
@@ -110,7 +111,7 @@ export default {
                     show: true,
                     alignWithLabel: true
                 },
-                max: 20,
+                // max: 20,
                 data: []
             }],
             grid: [{
@@ -154,6 +155,7 @@ export default {
                             themeName: item.themeName,
                             usedSize: item.usedSize,
                         });
+                        this.$set(this.xAxis[0].data, index, item.themeName);
                     })
                 }
             })
@@ -169,32 +171,32 @@ export default {
                     if (label == "存储空间") {
                         this.chartData.rows = [];
                         this.xAxis[0].data = [];
-                        value.data.net.forEach((item) => {
+                        value.data.net.forEach((item, index) => {
                             this.chartData.rows.push({
                                 themeName: item.themeName,
                                 usedSize: item.usedSize,
                             });
-                            this.$set(this.xAxis[0].data, this.xAxis[0].data.length, item.themeName);                            
+                            this.$set(this.xAxis[0].data, index, item.themeName);                            
                         })
                     } else if (label == "扫描次数") {
                         this.chartData.rows = [];
                         this.xAxis[0].data = [];
-                        value.data.scan.forEach((item) => {
+                        value.data.scan.forEach((item, index) => {
                             this.chartData.rows.push({
                                 themeName: item.themeName,
                                 usedSize: item.usedSize,
                             });
-                            this.$set(this.xAxis[0].data, this.xAxis[0].data.length, item.themeName);
+                            this.$set(this.xAxis[0].data, index, item.themeName);
                         })
                     } else {
                         this.chartData.rows = [];
                         this.xAxis[0].data = [];
-                        value.data.storage.forEach((item) => {
+                        value.data.storage.forEach((item, index) => {
                             this.chartData.rows.push({
                                 themeName: item.themeName,
                                 usedSize: item.usedSize,
                             });
-                            this.$set(this.xAxis[0].data, this.xAxis[0].data.length, item.themeName);
+                            this.$set(this.xAxis[0].data, index, item.themeName);
                         })
                     }
                 } 
@@ -205,6 +207,13 @@ export default {
 </script>
 <style lang="scss">
 #resouces {
+    .flex-style {
+        margin-top: 30px;
+        display: flex;
+        display: -webkit-flex;
+        justify-content: space-around;
+        padding: 0 10%;
+    }
     .intro1 {
         width: 240px;
         height: 145px;

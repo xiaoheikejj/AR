@@ -22,7 +22,7 @@ service.interceptors.response.use(response => {
         type: 'error',
         duration: 5 * 1000
     })
-    sessionStorage.setItem("overtime", -100);
+    // sessionStorage.setItem("overtime", -100);
     return Promise.reject(error)
 })
 

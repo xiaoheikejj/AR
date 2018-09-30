@@ -6,7 +6,7 @@
         </div>
     </div>
     <el-menu background-color="#fff"
-        text-color="#303133" 
+        text-color="#303133"
         active-text-color="#409EFF"
         :default-active="defaultActive"
         unique-opened
@@ -62,7 +62,6 @@ export default {
 <style lang="scss">
 #sidebar {
     height: 100%;
-    box-shadow: 0px 0px 4px rgba(0,0,0,.5);
     .el-menu {
         border-right: 0;
     }

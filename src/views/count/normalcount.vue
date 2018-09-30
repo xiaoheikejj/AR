@@ -11,7 +11,7 @@
         <div style="margin-top: 20px;">
             <el-date-picker
                 v-model="recognitionTime"
-                value-format="yyyy-MM-dd HH:hh:ss"
+                value-format="yyyy-MM-dd HH:mm:ss"
                 type="datetimerange"
                 unlink-panels
                 range-separator="-"
@@ -37,7 +37,7 @@
             :title="title"
             :data-empty="dataEmpty"></ve-line>
             <!-- <i class="el-icon-download" style="position: absolute;right: 100px;top: 20px;font-size: 30px;cursor: pointer;" @click="download"></i> -->
-            <ul>
+            <ul v-show="ul_li_show">
                 <li>
                     <span>识别次数</span>
                     <span>{{countNum.scan}}</span>
@@ -58,27 +58,27 @@
                 :data="tableData"
                 style="width: 100%"
                 stripe>
-                    <el-table-column
-                        prop="week"
-                        label="时间"
-                        align="center">
-                    </el-table-column>
-                    <el-table-column
-                        prop="scanNum"
-                        label="识别次数"
-                        align="center">
-                    </el-table-column>
-                    <el-table-column
-                        prop="userNum"
-                        label="参与人数"
-                        align="center">
-                    </el-table-column>
-                    <el-table-column
-                        prop="cashNum"
-                        label="中奖人数"
-                        align="center">
-                    </el-table-column>
-                </el-table>
+                <el-table-column
+                    prop="week"
+                    label="时间"
+                    align="center">
+                </el-table-column>
+                <el-table-column
+                    prop="scanNum"
+                    label="识别次数"
+                    align="center">
+                </el-table-column>
+                <el-table-column
+                    prop="userNum"
+                    label="参与人数"
+                    align="center">
+                </el-table-column>
+                <el-table-column
+                    prop="cashNum"
+                    label="中奖人数"
+                    align="center">
+                </el-table-column>
+            </el-table>
         </div>     
     </div>
 </template>
@@ -108,7 +108,7 @@ export default {
             },
             // 识别分析表格数据
             chartData: {
-                columns: ['日期', '识别次数', '参与人数', '中奖人数'],
+                columns: ['日期', '识别次数', '参与人数'],
                 rows: []
             },
             tableData: [],
@@ -169,6 +169,8 @@ export default {
                 top: 120
             }],
             dataEmpty: false,
+            //中奖人数的显示隐藏
+            ul_li_show: true,
             // 总数
             countNum: {
                 scan: 0,
@@ -182,6 +184,7 @@ export default {
         this.getActivity(this.activitySelect.list);
     },
     mounted() {
+        this.recognitionTime = [];
         this.confirmTime(this.recognitionSelectTime);
         this.recognitionRadio = this.recognitionSelectTime.today;
         // 首次渲染的是今天的时间
@@ -189,6 +192,7 @@ export default {
         setTimeout(function () {
             this.activitySelect.active = this.activitySelect.list[0].label;
             this.recognitionSubmit(getCorrectTime(this.recognitionRadio), getCorrectTime(new Date().getTime()));
+            this.recognitionTime.push(getCorrectTime(this.recognitionRadio), getCorrectTime(new Date().getTime()));
         }.bind(this), 1000)
     },
     //数据更新后在这处理
@@ -244,11 +248,16 @@ export default {
          * 单选按钮切换
          */
         recognitionChange(time) {
+            this.recognitionTime = [];
             const str = new Date(new Date().toLocaleDateString()).getTime();
             if (str == time) {
                 this.recognitionSubmit(getCorrectTime(time), getCorrectTime(new Date().getTime()));
+                //选择时间的框里面加入今天的时间
+                this.recognitionTime.push(getCorrectTime(time), getCorrectTime(new Date().getTime()));
             } else {
                 this.recognitionSubmit(getCorrectTime(time), getCorrectTime(str - 1));
+                //选择时间的框里面加入昨天，7天，30天的时间
+                this.recognitionTime.push(getCorrectTime(time), getCorrectTime(str - 1));
             }
         },
         /**
@@ -284,6 +293,7 @@ export default {
             .then(res => {
                 if (res.code === 1) {
                     this.dataEmpty = false;
+                    this.ul_li_show = true;
                     res.data.countInfo.forEach(ele => {
                         this.chartData.rows.push({
                             '日期': ele.week,
@@ -299,6 +309,7 @@ export default {
                     this.tableData = res.data.countInfo;
                 } else {
                     this.dataEmpty = true;
+                    this.ul_li_show = false;
                     this.$message.warning("AR应用统计暂无内容");
                 }
             })

@@ -3,15 +3,11 @@
         <el-container>
             <el-header>
                 <el-breadcrumb>
-                    <el-breadcrumb-item>
-                        精彩活动
-                    </el-breadcrumb-item>
-                    <el-breadcrumb-item class="firstbread">
-                        活动列表
-                    </el-breadcrumb-item>
+                    <el-breadcrumb-item>精彩活动</el-breadcrumb-item>
+                    <el-breadcrumb-item class="firstbread">活动列表</el-breadcrumb-item>
                 </el-breadcrumb>
             </el-header>
-            <el-main>
+            <el-main class="boxShadow">
                 <!-- 搜索 -->
                 <el-row type="flex" justify="space-between" class="screenRow">
                     <div>
@@ -30,32 +26,38 @@
                             placeholder="请输入活动名称"></el-input>
                         <el-button type="primary" icon="el-icon-search" @click="getTableData(1)">搜索</el-button>
                     </div>
-                    <el-button type="primary" @click="$router.push('/baseConfig')">新建活动</el-button>
+                    <el-button type="primary" @click="$router.push('/choiceTemplate')">新建活动</el-button>
                 </el-row>
                 <!-- 表格 -->
                 <el-table
                     :data="tableData"
                     style="width: 100%;margin-top: 20px;" 
                     stripe
-                    ref="table">
+                    ref="table"
+                    v-loading="loading"
+                    element-loading-text="拼命加载中"
+                    element-loading-spinner="el-icon-loading">
                     <el-table-column 
                         type="index" 
                         :index="handleIndex"
                         label="序号" 
-                        align="center">            
-                    </el-table-column>
-                    <el-table-column 
-                        label="活动名称"
                         align="center"
-                        class="title-name">
+                        width="70px">            
+                    </el-table-column>
+                    <el-table-column label="活动名称" class="title-name">
                         <template slot-scope="scope">
                             <div class="name-style">{{ scope.row.activityName }}</div>
                         </template>
                     </el-table-column>
-                    <el-table-column label="活动时间" align="center">
+                    <el-table-column label="活动时间" align="center" show-overflow-tooltip>
                         <template slot-scope="scope">
-                            <div>开始时间： {{ scope.row.beginTime }}</div>
-                            <div>结束时间： {{ scope.row.endTime }}</div>
+                            {{ scope.row.beginTime }} -- {{ scope.row.endTime }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="是否在时间范围" align="center">
+                        <template slot-scope="scope">
+                            <span v-if="scope.row.availableTime==true" style="color:#67C23A">{{ scope.row.available }}</span>
+                            <span v-else style="color:#F56C6C">{{ scope.row.available }}</span>
                         </template>
                     </el-table-column>
                     <el-table-column label="活动状态" align="center">
@@ -83,14 +85,11 @@
                             </el-tooltip>
                             <el-tooltip class="item" effect="light" content="删除" placement="top-start" 
                                 @click.native="confirmDelete(scope.row.activityID, scope.row.status)">
-                                <icon-svg icon-class="shanchu" style="font-size: 18px;"></icon-svg>                            
+                                <icon-svg icon-class="shanchu" class="del-icon"></icon-svg>                            
                             </el-tooltip>
                         </template>
                     </el-table-column>
                 </el-table>
-            </el-main>
-            <el-footer>
-                <!-- 分页 -->
                 <el-pagination 
                     @size-change="handleSizeChange"
                     @current-change="handleCurrentChange" 
@@ -99,8 +98,12 @@
                     layout="total, sizes, prev, pager, next, jumper" 
                     :total="tableTotal" 
                     background 
-                    style="text-align: center;">
+                    style="text-align: center;margin-top:20px;">
                 </el-pagination>
+            </el-main>
+            <el-footer>
+                <!-- 分页 -->
+                
             </el-footer>
         </el-container>
         <!-- 主题预览 -->
@@ -109,14 +112,14 @@
             title="预览活动"
             width="500px">
             <canvas ref="canvasA" style="vertical-align: middle;"></canvas>
-            <span style="vertical-align: middle;">
+            <span style="vertical-align: middle;" class="dialog-body">
                 手机扫左边二维码预览
             </span>
             <div style="width: 460px;border-top: 1px dashed #ccc;padding-top: 20px;">
-                <span style="color: #333;font-size: 18px;">识别图</span>
-                <span>点击小图可展示大图</span>
+                <span class="dialog-bottom-title">识别图</span>
+                <span class="dialog-bottom-body">点击小图可展示大图</span>
             </div>
-            <div class="swiper-container" style="padding-top: 20px;">
+            <div class="swiper-container" style="padding-top: 20px;" v-show="swiperShow">
                 <div class="swiper-wrapper">
                     <div class="swiper-slide" v-for="(item, index) in slideImgs" :key="String(index)">
                         <img :src="item" style="width: 100%;max-height: 100px;">
@@ -132,22 +135,24 @@
             :visible.sync="urlvisible"
             title="获取活动链接"
             width="500px">
-            <span>url链接</span>
-            <el-input style="width: 300px;"
-                v-model="activityURL"
-                class="urlinput"></el-input>
-            <el-button type="primary" 
-                @click="copyURL" 
-                data-clipboard-target=".urlinput"
-                class="copy">复制</el-button>
+            <div class="flex-around">
+                <span>URL链接</span>
+                <el-input style="width: 300px;"
+                    v-model="activityURL"
+                    class="urlinput"></el-input>
+                <el-button type="primary" 
+                    @click="copyURL" 
+                    data-clipboard-target=".urlinput"
+                    class="copy">复制</el-button>
+            </div>
             <div style="display: flex;display: -webkit-flex;">
                 <canvas ref="canvasB"></canvas>
                 <div style="padding: 15px;">
                     <a id="downloadLink"></a>
-                    <el-button type="primary" @click="saveQRCode">保存二维码</el-button>
                     <div class="linkUrl-style">使用说明</div>
                     <div class="linkUrl-style">1、可将URL链接复制到运营活动入口。</div>
-                    <div class="linkUrl-style">2、可保存二维码图片，作为用户扫码进入入口</div>
+                    <div class="linkUrl-style" style="margin-bottom: 45px;">2、可保存二维码图片，作为用户扫码进入入口</div>
+                    <el-button type="primary" @click="saveQRCode">保存二维码</el-button>
                 </div>  
             </div>
         </el-dialog>
@@ -202,13 +207,19 @@ export default {
             //swiper小图点击展示大图
             mySwiper: null,
             identifyvisible: false,
-            identifyurl: ""
+            identifyurl: "",
+            loading: true,
+            swiperShow: true
         }
     },
     components: {
         IconSvg
     },
     created() {
+        //如果没登录跳转到登录页
+        if (!this.productID) {
+            this.$router.push("/");
+        }
         this.getTableData(1);
     },
     methods: {
@@ -225,6 +236,7 @@ export default {
          * @param [page] 第几页
          */
         getTableData(page) {
+            this.loading = true;
             const params = {
                 pageNo: page,
                 pageSize: this.handleSize,
@@ -236,9 +248,30 @@ export default {
             };
             activityList(params)
             .then(res => {
+                //去除等待动效
+                this.loading = false;
                 if (res.code === 1) {
+                    res.data.list.forEach(element => {
+                        let beginTime = new Date(element.beginTime).getTime(),
+                            endTime = new Date(element.endTime).getTime(),
+                            nowTime = new Date().getTime();
+                        let available,
+                            availableTime;
+                        if (nowTime > beginTime && nowTime < endTime) {
+                            available = "此活动在时间内";
+                            availableTime = true;
+                        } else {
+                            available = "此活动不在时间内";
+                            availableTime = false;
+                        }
+                        element.available = available;
+                        element.availableTime = availableTime;
+                    });    
                     this.tableData = res.data.list;
                     this.tableTotal = res.data.totalSize;
+                } else {
+                    this.tableData = [];
+                    this.tableTotal = 0;
                 }
             })
         },
@@ -322,8 +355,13 @@ export default {
             previewActivity(params)
             .then(res => {
                 if (res.code === 1) {
+                    if (res.data.hasOwnProperty("contentUrl")) {
+                        this.slideImgs = res.data.contentUrl;
+                        this.swiperShow = true;
+                    } else {
+                        this.swiperShow = false;
+                    }
                     QRCode.toCanvas(this.$refs.canvasA, res.data.codeUrl);
-                    this.slideImgs = res.data.contentUrl;
                     setTimeout(() => {
                         this.mySwiper = new Swiper('.swiper-container', {
                             navigation: {
@@ -391,6 +429,10 @@ export default {
          */
         handleIndex(res) {
             let value = this.handleCurrent - 1 + String(res + 1);
+            //分为10,20,30
+            if (res == 9) {
+                value = this.handleCurrent + "0";
+            }
             let arr = value.split("");
             if (arr[0] == 0) {
                 arr.shift();

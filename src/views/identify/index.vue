@@ -9,7 +9,7 @@
                     <el-breadcrumb-item class="firstbread">AR识别图</el-breadcrumb-item>
                 </el-breadcrumb>
             </el-header>
-            <el-main>
+            <el-main class="boxShadow">
                 <!-- 搜索 -->
                 <el-row type="flex" justify="space-between" class="screenRow">
                     <div>
@@ -39,7 +39,9 @@
                     :data="tableData" 
                     style="width: 100%;margin-top: 20px;" 
                     stripe
-                    element-loading-text="拼命加载中">
+                    v-loading="loading"
+                    element-loading-text="拼命加载中"
+                    element-loading-spinner="el-icon-loading">
                     <el-table-column 
                         type="index" 
                         :index="handleIndex"
@@ -59,13 +61,15 @@
                             <span class="spanimg-style" @click="cellClickContent(scope.row)">
                                 <!-- 图片 -->
                                 <img v-if="scope.row.contentType == 1 || scope.row.contentType == 2" 
-                                    :src="scope.row.smallContent" style="width: 100%;" >
+                                    :src="scope.row.smallContent" width="100%">
                                 <!-- 视频 -->
                                 <!-- <video v-if="scope.row.contentType == 2" 
                                     :src="scope.row.smallContent" style="width: 100%;"></video> -->
                                 <!-- 外链 -->
                                 <a v-if="scope.row.contentType == 3" 
-                                    :href="scope.row.smallContent" target="_blank"></a>
+                                    :href="scope.row.smallContent" 
+                                    target="_blank">
+                                </a>
                             </span>
                         </template>
                     </el-table-column>
@@ -102,9 +106,6 @@
                         </template>
                     </el-table-column>
                 </el-table>
-            </el-main>
-            <el-footer>
-                <!-- 分页 -->
                 <el-pagination 
                     @size-change="handleSizeChange"
                     @current-change="handleCurrentChange" 
@@ -113,15 +114,19 @@
                     layout="total, sizes, prev, pager, next, jumper" 
                     :total="tableTotal" 
                     background 
-                    style="text-align: center;">
+                    style="text-align: center;margin-top: 20px;">
                 </el-pagination>
+            </el-main>
+            <el-footer>
+                <!-- 分页 -->
+                
             </el-footer>
             <!-- 大图 -->
             <el-dialog
                 :visible.sync="detailvisible"
                 width="500px">
                 <img v-if="contentType==1" :src="detailImgUrl" style="width: 100%;">
-                <video v-if="contentType==2" :src="detailVideoUrl" style="width: 100%;"></video>
+                <video v-if="contentType==2" ref="video" :src="detailVideoUrl" style="width: 100%;"></video>
             </el-dialog>
         </el-container>
     </div>
@@ -170,14 +175,33 @@ export default {
             detailvisible: false,
             detailImgUrl: "",
             detailVideoUrl: "",
-            contentType: ""
+            contentType: "",
+            loading: true
         }
     },
     components: {
         IconSvg
     },
     created() {
+        //如果没有登录跳转到登录页
+        if (!this.productID) {
+            this.$router.push("/");
+        }
         this.getTableData(1);
+    },
+    watch: {
+        //点击展示内容的时候播放还是暂停
+        detailvisible() {
+            this.$nextTick(() => {
+                if (this.contentType == 2) {
+                    if (this.detailvisible) {
+                        this.$refs.video.play();
+                    } else {
+                        this.$refs.video.pause();
+                    }
+                }
+            })
+        }
     },
     methods: {
         /**
@@ -185,6 +209,7 @@ export default {
          * @param [page] 当前第几页
          */
         getTableData(page) {
+            this.loading = true;
             let themeID = sessionStorage.getItem("themeID");
             const params = {
                 themeID: themeID,
@@ -199,12 +224,14 @@ export default {
             };
             identifyList(params)
             .then(res => {
+                this.loading = false;
                 if (res.code === 1) {
                     this.tableData = res.data.list;
                     this.tableTotal = res.data.totalSize;
                 } else {
                     //表格为空，分页不显示
                     this.tableData = [];
+                    this.tableTotal = 0;
                 }          
             })
             .catch(err => {
@@ -292,6 +319,10 @@ export default {
          */
         handleIndex(res) {
             let value = this.handleCurrent - 1 + String(res + 1);
+            //分为10,20,30
+            if (res == 9) {
+                value = this.handleCurrent + "0";
+            }
             let arr = value.split("");
             if (arr[0] == 0) {
                 arr.shift();

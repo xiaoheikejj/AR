@@ -134,6 +134,8 @@ export default {
                             sessionStorage.setItem("userID", res.data.userID);
                             sessionStorage.setItem("arProductID", res.data.arProductID);
                             sessionStorage.setItem("activityProductID", res.data.activityProductID);
+                            sessionStorage.setItem("lbsProductID", res.data.lbsProductID);
+                            sessionStorage.setItem("lbsArProductID", res.data.lbsArProductID);
                             this.$router.push("/themeList");
                         } else {
                             this.$message.error("用户名或密码有误");

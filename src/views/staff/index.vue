@@ -7,7 +7,7 @@
                     <el-breadcrumb-item class="firstbread">员工管理</el-breadcrumb-item>
                 </el-breadcrumb>
             </el-header>
-            <el-main>
+            <el-main class="boxShadow">
                 <el-row type="flex" justify="space-between" class="screenRow">
                     <div>
                         <el-select placeholder="全部" 
@@ -42,12 +42,15 @@
                     :data="tableData" 
                     style="width: 100%;margin-top: 20px;" 
                     stripe
-                    element-loading-text="拼命加载中">
+                    v-loading="loading"
+                    element-loading-text="拼命加载中"
+                    element-loading-spinner="el-icon-loading">
                     <el-table-column 
                         type="index" 
                         :index="handleIndex"
                         label="序号" 
-                        align="center">            
+                        align="center"
+                        width="70px">            
                     </el-table-column>
                     <el-table-column label="姓名" prop="employeeName">
                         <template slot-scope="scope">
@@ -82,13 +85,11 @@
                             </el-tooltip>
                             <el-tooltip class="item" effect="light" content="删除" placement="top-start" 
                                 @click.native="DEL(scope.row.employeeID)">
-                                <icon-svg icon-class="shanchu" style="font-size: 18px;"></icon-svg>
+                                <icon-svg icon-class="shanchu" class="del-icon"></icon-svg>
                             </el-tooltip>
                         </template>
                     </el-table-column>
                 </el-table>
-            </el-main>
-            <el-footer>
                 <el-pagination 
                     @size-change="handleSizeChange"
                     @current-change="handleCurrentChange" 
@@ -97,8 +98,11 @@
                     layout="total, sizes, prev, pager, next, jumper" 
                     :total="tableTotal" 
                     background 
-                    style="text-align: center;">
+                    style="text-align: center;margin-top:20px;">
                 </el-pagination>
+            </el-main>
+            <el-footer>
+                
             </el-footer>
         </el-container>
     </div>
@@ -137,13 +141,18 @@ export default {
             tableData: [],
             tableTotal: 0,
             switchopen: 1,
-            switchclose: 0
+            switchclose: 0,
+            loading: true
         }
     },
     components: {
         IconSvg
     },
     created() {
+        //如果没有登录跳转到登录页
+        if (!this.userID) {
+            this.$router.push("/");
+        }
         this.getTableData(1);
     },
     mounted() {
@@ -163,6 +172,7 @@ export default {
          * @param [page] 第几页
          */
         getTableData(page) {
+            this.loading = true;
             const params = {
                 pageNo: page,
                 pageSize: this.handleSize,
@@ -174,6 +184,8 @@ export default {
             };
             staffList(params)
             .then(res => {
+                //消除等待特效
+                this.loading = false;
                 if (res.code === 1) {
                     this.tableData = res.data.list;
                     this.tableTotal = res.data.totalSize;
@@ -277,6 +289,10 @@ export default {
          */
         handleIndex(res) {
             let value = this.handleCurrent - 1 + String(res + 1);
+            //分为10,20,30
+            if (res == 9) {
+                value = this.handleCurrent + "0";
+            }
             let arr = value.split("");
             if (arr[0] == 0) {
                 arr.shift();
